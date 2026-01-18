@@ -62,6 +62,7 @@ const routes = [
   { name: 'WabaManagement', label: 'WABA Management' },
   { name: 'Templates', label: 'Templates' },
   { name: 'Analytics', label: 'Analytics' },
-  { name: 'Settings', label: 'Settings' }
+  { name: 'Settings', label: 'Settings' },
+  { name: 'PrivacyPolicy', label: 'Privacy Policy' }
 ]
 </script>

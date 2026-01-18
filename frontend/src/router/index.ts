@@ -5,6 +5,7 @@ import WabaManagement from '../views/WabaManagement.vue'
 import Templates from '../views/Templates.vue'
 import Analytics from '../views/Analytics.vue'
 import Settings from '../views/Settings.vue'
+import PrivacyPolicy from '../views/PrivacyPolicy.vue'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -41,6 +42,11 @@ const routes: RouteRecordRaw[] = [
     name: 'Settings',
     component: Settings,
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/privacy-policy',
+    name: 'PrivacyPolicy',
+    component: PrivacyPolicy
   }
 ]
 
