@@ -1,0 +1,284 @@
+{
+  "name": "WhatsApp Message Status Sync",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "webhook/whatsapp-message-status",
+        "responseMode": "lastNode",
+        "options": {
+          "allowedOrigins": [],
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpBasicAuth"
+        }
+      },
+      "id": "status-webhook",
+      "name": "WhatsApp Status Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": "webhook-whatsapp-status"
+    },
+    {
+      "parameters": {
+        "jsCode": "const entry = $input.first().json.entry?.[0];\nconst change = entry?.changes?.[0];\nconst value = change?.value;\n\nif (!value || !value.statuses) {\n  return [];\n}\n\nreturn value.statuses.map(status => {\n  const statusMap = {\n    'sent': 'sent',\n    'delivered': 'delivered',\n    'read': 'read',\n    'failed': 'failed'\n  };\n  \n  return {\n    message_id: status.id,\n    conversation_id: status.conversation?.id,\n    from: status.recipient_id,\n    status: statusMap[status.status] || status.status,\n    timestamp: status.timestamp,\n    errors: status.errors,\n    original_status: status\n  };\n});"
+      },
+      "id": "parse-status",
+      "name": "Parse Status",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const status = $input.first().json;\nconst chatwootUrl = $env.CHATWOOT_API_URL || 'https://your-chatwoot.com';\nconst chatwootToken = $env.CHATWOOT_API_TOKEN || '';\nconst accountId = $env.CHATWOOT_ACCOUNT_ID || '1';\n\nconst statusMap = {\n  'sent': 'sent',\n  'delivered': 'delivered', \n  'read': 'read',\n  'failed': 'failed'\n};\n\nconst chatwootStatus = statusMap[status.status] || status.status;\n\nreturn [{\n  chatwootUrl,\n  chatwootToken,\n  accountId,\n  whatsappMessageId: status.message_id,\n  chatwootStatus: chatwootStatus,\n  timestamp: new Date(parseInt(status.timestamp) * 1000).toISOString(),\n  errors: status.errors\n}];"
+      },
+      "id": "transform-status",
+      "name": "Transform Status",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.chatwootUrl }}/api/v1/accounts/{{$json.accountId}}/conversations",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "filter",
+              "value": "all_open"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api_access_token",
+              "value": "={{ $json.chatwootToken }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "get-conversations",
+      "name": "Get All Conversations",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const conversations = $input.first().json.payload;\nconst targetMessageId = $('Transform Status').first().json.whatsappMessageId;\n\nlet matchingConversation = null;\nlet matchingMessage = null;\n\nfor (const conv of conversations) {\n  if (conv.messages && conv.messages.length > 0) {\n    const msg = conv.messages.find(m => m.source_id === targetMessageId);\n    if (msg) {\n      matchingConversation = conv;\n      matchingMessage = msg;\n      break;\n    }\n  }\n}\n\nif (!matchingConversation || !matchingMessage) {\n  console.log('No matching conversation/message found for', targetMessageId);\n  return [];\n}\n\nreturn [{\n  conversationId: matchingConversation.id,\n  messageId: matchingMessage.id,\n  chatwootUrl: $('Transform Status').first().json.chatwootUrl,\n  chatwootToken: $('Transform Status').first().json.chatwootToken,\n  accountId: $('Transform Status').first().json.accountId,\n  chatwootStatus: $('Transform Status').first().json.chatwootStatus,\n  errors: $('Transform Status').first().json.errors\n}];"
+      },
+      "id": "find-message",
+      "name": "Find Matching Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1050, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.chatwootUrl }}/api/v1/accounts/{{$json.accountId}}/conversations/{{$json.conversationId}}/messages/{{$json.messageId}}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "method": "PATCH",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "status",
+              "value": "={{ $json.chatwootStatus }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api_access_token",
+              "value": "={{ $json.chatwootToken }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "update-status",
+      "name": "Update Chatwoot Status",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1250, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "failed-check",
+              "leftValue": "={{ $('Transform Status').first().json.chatwootStatus }}",
+              "rightValue": "failed",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "check-failed",
+      "name": "Check if Failed",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 1,
+      "position": [1450, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json;\nconst errors = data.errors;\n\nlet errorMessage = 'Message delivery failed';\nif (errors && errors.length > 0) {\n  errorMessage = errors[0].title || errorMessage;\n  if (errors[0].message) {\n    errorMessage += `: ${errors[0].message}`;\n  }\n}\n\nreturn [{\n  errorMessage: errorMessage,\n  conversationId: data.conversationId,\n  messageId: data.messageId,\n  chatwootUrl: data.chatwootUrl,\n  chatwootToken: data.chatwootToken,\n  accountId: data.accountId\n}];"
+      },
+      "id": "format-error",
+      "name": "Format Error Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1650, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.chatwootUrl }}/api/v1/accounts/{{$json.accountId}}/conversations/{{$json.conversationId}}/messages/{{$json.messageId}}/notes",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "method": "POST",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "content",
+              "value": "⚠️ WhatsApp Error: {{ $json.errorMessage }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api_access_token",
+              "value": "={{ $json.chatwootToken }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "add-error-note",
+      "name": "Add Error Note",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1850, 300]
+    }
+  ],
+  "connections": {
+    "WhatsApp Status Webhook": {
+      "main": [
+        [
+          {
+            "node": "Parse Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Status": {
+      "main": [
+        [
+          {
+            "node": "Transform Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transform Status": {
+      "main": [
+        [
+          {
+            "node": "Get All Conversations",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get All Conversations": {
+      "main": [
+        [
+          {
+            "node": "Find Matching Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Matching Message": {
+      "main": [
+        [
+          {
+            "node": "Update Chatwoot Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Chatwoot Status": {
+      "main": [
+        [
+          {
+            "node": "Check if Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check if Failed": {
+      "main": [
+        [
+          {
+            "node": "Format Error Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Error Message": {
+      "main": [
+        [
+          {
+            "node": "Add Error Note",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 1,
+  "updatedAt": "2026-01-17T12:00:00.000Z",
+  "versionId": "1"
+}

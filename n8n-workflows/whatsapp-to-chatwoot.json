@@ -1,0 +1,357 @@
+{
+  "name": "WhatsApp to Chatwoot - Incoming Messages",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "webhook/whatsapp-to-chatwoot",
+        "responseMode": "lastNode",
+        "options": {
+          "allowedOrigins": [],
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpBasicAuth"
+        }
+      },
+      "id": "whatsapp-webhook",
+      "name": "WhatsApp Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": "webhook-whatsapp-incoming"
+    },
+    {
+      "parameters": {
+        "jsCode": "const entry = $input.first().json.entry?.[0];\nconst change = entry?.changes?.[0];\nconst value = change?.value;\n\nif (!value || !value.messages) {\n  return [];\n}\n\nreturn value.messages.map(msg => {\n  const from = msg.from;\n  const to = msg.to;\n  const timestamp = msg.timestamp;\n  const type = msg.type;\n  const content = type === 'text' ? msg.text?.body : '';\n  \n  return {\n    message_id: msg.id,\n    phone_number_id: from,\n    business_phone_number: to,\n    timestamp: timestamp,\n    type: type,\n    content: content,\n    original_message: msg\n  };\n});"
+      },
+      "id": "parse-message",
+      "name": "Parse Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "filter-type",
+              "leftValue": "={{ $json.type }}",
+              "rightValue": "text",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "filter-text",
+      "name": "Filter Text Messages",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const message = $input.first().json;\nconst chatwootUrl = $env.CHATWOOT_API_URL || 'https://your-chatwoot.com';\nconst chatwootToken = $env.CHATWOOT_API_TOKEN || '';\nconst accountId = $env.CHATWOOT_ACCOUNT_ID || '1';\nconst inboxId = $env.CHATWOOT_INBOX_ID || '1';\n\nconst contactData = {\n  inbox_id: parseInt(inboxId),\n  name: message.phone_number_id.replace('+', ''),\n  email: `${message.phone_number_id.replace('+', '')}@whatsapp.com`,\n  phone_number: `+${message.phone_number_id.replace('+', '')}`,\n  identifier: `+${message.phone_number_id.replace('+', '')}`\n};\n\nconst conversationData = {\n  contact_id: 0,\n  inbox_id: parseInt(inboxId),\n  status: 'open',\n  source_id: `+${message.phone_number_id.replace('+', '')}`\n};\n\nconst messageData = {\n  content: message.content,\n  message_type: 'incoming',\n  created_at: new Date(parseInt(message.timestamp) * 1000).toISOString(),\n  source_id: message.message_id\n};\n\nreturn [{\n  chatwootUrl,\n  chatwootToken,\n  accountId,\n  inboxId,\n  contactData,\n  conversationData,\n  messageData,\n  originalMessage: message\n}];"
+      },
+      "id": "transform-chatwoot",
+      "name": "Transform for Chatwoot",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.chatwootUrl }}/api/v1/accounts/{{$json.accountId}}/contacts/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api_access_token",
+              "value": "={{ $json.chatwootToken }}"
+            }
+          ]
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ $json.contactData.phone_number }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "check-contact",
+      "name": "Check if Contact Exists",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1050, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "contact-exists",
+              "leftValue": "={{ $json.payload.length }}",
+              "rightValue": "0",
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "check-contact-exists",
+      "name": "Contact Exists?",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 1,
+      "position": [1250, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.chatwootUrl }}/api/v1/accounts/{{$json.accountId}}/contacts",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "name",
+              "value": "={{ $('Transform for Chatwoot').first().json.contactData.name }}"
+            },
+            {
+              "name": "email",
+              "value": "={{ $('Transform for Chatwoot').first().json.contactData.email }}"
+            },
+            {
+              "name": "phone_number",
+              "value": "={{ $('Transform for Chatwoot').first().json.contactData.phone_number }}"
+            },
+            {
+              "name": "identifier",
+              "value": "={{ $('Transform for Chatwoot').first().json.contactData.identifier }}"
+            },
+            {
+              "name": "inbox_id",
+              "value": "={{ $('Transform for Chatwoot').first().json.inboxId }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api_access_token",
+              "value": "={{ $json.chatwootToken }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "create-contact",
+      "name": "Create Contact",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1450, 200]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.chatwootUrl }}/api/v1/accounts/{{$json.accountId}}/conversations",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "contact_id",
+              "value": "={{ $json.id }}"
+            },
+            {
+              "name": "inbox_id",
+              "value": "={{ $('Transform for Chatwoot').first().json.inboxId }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api_access_token",
+              "value": "={{ $('Transform for Chatwoot').first().json.chatwootToken }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "create-conversation",
+      "name": "Create Conversation",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1650, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.chatwootUrl }}/api/v1/accounts/{{$json.accountId}}/conversations/{{$json.id}}/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "content",
+              "value": "={{ $('Transform for Chatwoot').first().json.messageData.content }}"
+            },
+            {
+              "name": "message_type",
+              "value": "incoming"
+            },
+            {
+              "name": "source_id",
+              "value": "={{ $('Transform for Chatwoot').first().json.messageData.source_id }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api_access_token",
+              "value": "={{ $('Transform for Chatwoot').first().json.chatwootToken }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "send-to-chatwoot",
+      "name": "Send to Chatwoot",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1850, 300]
+    }
+  ],
+  "connections": {
+    "WhatsApp Webhook": {
+      "main": [
+        [
+          {
+            "node": "Parse Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Message": {
+      "main": [
+        [
+          {
+            "node": "Filter Text Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Text Messages": {
+      "main": [
+        [
+          {
+            "node": "Transform for Chatwoot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transform for Chatwoot": {
+      "main": [
+        [
+          {
+            "node": "Check if Contact Exists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check if Contact Exists": {
+      "main": [
+        [
+          {
+            "node": "Contact Exists?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Contact Exists?": {
+      "main": [
+        [
+          {
+            "node": "Create Contact",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Contact": {
+      "main": [
+        [
+          {
+            "node": "Create Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Conversation": {
+      "main": [
+        [
+          {
+            "node": "Send to Chatwoot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 1,
+  "updatedAt": "2026-01-17T12:00:00.000Z",
+  "versionId": "1"
+}

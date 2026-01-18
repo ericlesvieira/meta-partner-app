@@ -1,0 +1,214 @@
+{
+  "name": "Chatwoot to WhatsApp - Outgoing Messages",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "webhook/chatwoot-to-whatsapp",
+        "responseMode": "lastNode",
+        "options": {
+          "allowedOrigins": [],
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpBasicAuth"
+        }
+      },
+      "id": "chatwoot-webhook",
+      "name": "Chatwoot Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": "webhook-chatwoot-outgoing"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "event-filter",
+              "leftValue": "={{ $json.event }}",
+              "rightValue": "message_created",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "filter-event",
+      "name": "Filter Message Created",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json;\nconst message = data.message || {};\nconst conversation = data.conversation || {};\nconst contact = conversation.contact || {};\n\nconst phoneNumber = contact.phone_number || contact.identifier || '';\nconst content = message.content || '';\nconst messageType = message.message_type || 'outgoing';\nconst inboxId = conversation.inbox_id;\n\nif (messageType !== 'outgoing') {\n  return [];\n}\n\nif (!phoneNumber) {\n  return [];\n}\n\nreturn [{\n  phoneNumber: phoneNumber.replace(/[^\\d]/g, ''),\n  content: content,\n  messageType: messageType,\n  conversationId: conversation.id,\n  messageId: message.id,\n  inboxId: inboxId,\n  originalData: data\n}];"
+      },
+      "id": "extract-message",
+      "name": "Extract Message Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const message = $input.first().json;\nconst accessToken = $env.WHATSAPP_ACCESS_TOKEN || '';\nconst phoneNumberId = $env.WHATSAPP_PHONE_NUMBER_ID || '';\n\nif (!phoneNumberId || !accessToken) {\n  throw new Error('Missing WhatsApp credentials');\n}\n\nconst phoneWithoutPlus = message.phoneNumber;\n\nconst whatsappMessage = {\n  messaging_product: 'whatsapp',\n  recipient_type: 'individual',\n  to: phoneWithoutPlus,\n  type: 'text',\n  text: {\n    body: message.content,\n    preview_url: false\n  }\n};\n\nreturn [{\n  apiUrl: `https://graph.facebook.com/v20.0/${phoneNumberId}/messages`,\n  accessToken: accessToken,\n  messageData: whatsappMessage,\n  chatwootMessageId: message.messageId,\n  conversationId: message.conversationId\n}];"
+      },
+      "id": "transform-whatsapp",
+      "name": "Transform for WhatsApp",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.apiUrl }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.messageData) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.accessToken }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "send-whatsapp",
+      "name": "Send to WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1050, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const whatsappResponse = $input.first().json;\nconst previousNode = $('Transform for WhatsApp').first().json;\n\nconst chatwootUrl = $env.CHATWOOT_API_URL || 'https://your-chatwoot.com';\nconst chatwootToken = $env.CHATWOOT_API_TOKEN || '';\nconst accountId = $env.CHATWOOT_ACCOUNT_ID || '1';\n\nconst messageId = whatsappResponse?.messages?.[0]?.id;\n\nreturn [{\n  chatwootUrl,\n  chatwootToken,\n  accountId,\n  conversationId: previousNode.conversationId,\n  chatwootMessageId: previousNode.chatwootMessageId,\n  whatsappMessageId: messageId\n}];"
+      },
+      "id": "prepare-status-update",
+      "name": "Prepare Status Update",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1250, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.chatwootUrl }}/api/v1/accounts/{{$json.accountId}}/conversations/{{$json.conversationId}}/messages/{{$json.chatwootMessageId}}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "method": "PATCH",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "source_id",
+              "value": "={{ $json.whatsappMessageId }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api_access_token",
+              "value": "={{ $json.chatwootToken }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "update-message-status",
+      "name": "Update Message Status",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1450, 300]
+    }
+  ],
+  "connections": {
+    "Chatwoot Webhook": {
+      "main": [
+        [
+          {
+            "node": "Filter Message Created",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Message Created": {
+      "main": [
+        [
+          {
+            "node": "Extract Message Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Message Data": {
+      "main": [
+        [
+          {
+            "node": "Transform for WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transform for WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Send to WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send to WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Prepare Status Update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Status Update": {
+      "main": [
+        [
+          {
+            "node": "Update Message Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 1,
+  "updatedAt": "2026-01-17T12:00:00.000Z",
+  "versionId": "1"
+}
