@@ -126,15 +126,29 @@
         </div>
       </div>
 
-      <div class="mt-12 bg-blue-50 border border-blue-200 rounded-xl p-6">
-        <h3 class="text-lg font-bold text-blue-900 mb-3">📋 Próximos Passos</h3>
-        <ol class="list-decimal list-inside space-y-2 text-blue-800">
-          <li>Crie um aplicativo no Meta for Developers com o produto WhatsApp</li>
-          <li>Solicite as permissões <code class="bg-blue-100 px-2 py-1 rounded">whatsapp_business_messaging</code> e <code class="bg-blue-100 px-2 py-1 rounded">whatsapp_business_management</code></li>
-          <li>Configure os webhooks no n8n para receber/enviar mensagens</li>
-          <li>Integre com o Chatwoot através dos webhooks</li>
-          <li>Envie o vídeo de demonstração para aprovação do Meta</li>
-        </ol>
+      <div class="mt-12 bg-white rounded-2xl shadow-lg p-6 border border-slate-100">
+        <h3 class="text-lg font-bold text-slate-900 mb-3">Legal</h3>
+        <p class="text-slate-600 mb-4">Acesse as políticas e termos oficiais do serviço.</p>
+        <div class="flex flex-col sm:flex-row sm:flex-wrap gap-3">
+          <router-link
+            to="/privacy-policy"
+            class="inline-flex items-center justify-center rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-slate-300 hover:text-slate-900 transition"
+          >
+            Privacy Policy
+          </router-link>
+          <router-link
+            to="/terms-of-service"
+            class="inline-flex items-center justify-center rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-slate-300 hover:text-slate-900 transition"
+          >
+            Terms of Service
+          </router-link>
+          <router-link
+            to="/data-deletion"
+            class="inline-flex items-center justify-center rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-slate-300 hover:text-slate-900 transition"
+          >
+            Data Deletion Request
+          </router-link>
+        </div>
       </div>
     </div>
   </div>

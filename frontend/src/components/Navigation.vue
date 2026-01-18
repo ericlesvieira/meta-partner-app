@@ -63,6 +63,8 @@ const routes = [
   { name: 'Templates', label: 'Templates' },
   { name: 'Analytics', label: 'Analytics' },
   { name: 'Settings', label: 'Settings' },
-  { name: 'PrivacyPolicy', label: 'Privacy Policy' }
+  { name: 'PrivacyPolicy', label: 'Privacy Policy' },
+  { name: 'TermsOfService', label: 'Terms of Service' },
+  { name: 'DataDeletion', label: 'Data Deletion' }
 ]
 </script>

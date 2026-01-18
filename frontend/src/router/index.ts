@@ -6,6 +6,8 @@ import Templates from '../views/Templates.vue'
 import Analytics from '../views/Analytics.vue'
 import Settings from '../views/Settings.vue'
 import PrivacyPolicy from '../views/PrivacyPolicy.vue'
+import TermsOfService from '../views/TermsOfService.vue'
+import DataDeletion from '../views/DataDeletion.vue'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -47,6 +49,16 @@ const routes: RouteRecordRaw[] = [
     path: '/privacy-policy',
     name: 'PrivacyPolicy',
     component: PrivacyPolicy
+  },
+  {
+    path: '/terms-of-service',
+    name: 'TermsOfService',
+    component: TermsOfService
+  },
+  {
+    path: '/data-deletion',
+    name: 'DataDeletion',
+    component: DataDeletion
   }
 ]
 
