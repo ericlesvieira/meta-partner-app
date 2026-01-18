@@ -121,14 +121,14 @@ meta-partner-app/
 | **GitHub** | https://github.com/ericlesvieira/meta-partner-app | ✅ Ativo |
 | **Coolify** | https://coolify.ericlestatistica.com.br | ✅ Acessível |
 | **n8n** | https://n8n.ericlestatistica.com.br | ✅ Funcionando |
-| **Frontend** | https://app.ericlestatistica.com.br | ⏳ Deploy pendente |
+| **Frontend** | https://ericlestatistica.com.br | ⏳ Deploy pendente |
 
 ---
 
 ## ⚠️ Importante
 
 **Antes de fazer o deploy:**
-1. Configure o DNS para `app.ericlestatistica.com.br`
+1. Configure o DNS para `ericlestatistica.com.br`
 2. Encontre o IP do seu servidor Coolify
 3. Verifique que você tem as credenciais Meta
 

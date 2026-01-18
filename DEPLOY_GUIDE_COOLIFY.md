@@ -1,7 +1,7 @@
 # Guia de Deploy no Coolify - Passo a Passo
 
 ## 🎯 Objetivo
-Fazer deploy do frontend Vue.js em: **https://app.ericlestatistica.com.br**
+Fazer deploy do frontend Vue.js em: **https://ericlestatistica.com.br**
 
 ---
 
@@ -9,7 +9,7 @@ Fazer deploy do frontend Vue.js em: **https://app.ericlestatistica.com.br**
 - ✅ Repositório GitHub criado: `ericlesvieira/meta-partner-app`
 - ✅ Código commitado e pushed
 - ✅ Coolify acessível: `https://coolify.ericlestatistica.com.br`
-- ⏳ DNS para `app.ericlestatistica.com.br` (configurar após deploy)
+- ⏳ DNS para `ericlestatistica.com.br` (configurar após deploy)
 
 ---
 
@@ -68,7 +68,7 @@ Preencha conforme abaixo:
 ### 4.1 Adicionar Domínio
 1. Após criar a aplicação, vá na aba **"Domains"**
 2. Clique em **"Add Domain"**
-3. Digite: `app.ericlestatistica.com.br`
+3. Digite: `ericlestatistica.com.br`
 4. Clique em **"Save"** ou **"Add"**
 
 ### 4.2 SSL Automático
@@ -104,7 +104,7 @@ Preencha conforme abaixo:
 ## ✅ Passo 6: Testar Aplicação
 
 ### 6.1 Acessar URL
-1. Abra no navegador: `https://app.ericlestatistica.com.br`
+1. Abra no navegador: `https://ericlestatistica.com.br`
 2. Você deve ver a página inicial do app
 
 ### 6.2 Testar Funcionalidades
@@ -143,8 +143,8 @@ TTL: 300
 4. Copie o **IP address**
 
 ### 7.3 Verificar Propagação DNS
-- Use: https://dnschecker.org/app.ericlestatistica.com.br
-- Digite: `app.ericlestatistica.com.br`
+- Use: https://dnschecker.org/ericlestatistica.com.br
+- Digite: `ericlestatistica.com.br`
 - Aguarde todos os servidores mostrarem green (pode levar 10-30 min)
 - Máximo: 24h (normalmente muito mais rápido)
 
@@ -250,7 +250,7 @@ Acesse seu Chatwoot: Settings → Integrations → Webhooks
 ## 📊 Passo 11: Testar Frontend
 
 ### 11.1 Configurar Credenciais Meta
-1. Acesse: `https://app.ericlestatistica.com.br`
+1. Acesse: `https://ericlestatistica.com.br`
 2. Clique em **"Connect with Meta"**
 3. Preencha:
    - **App ID**: [ID do seu Meta app]
@@ -337,7 +337,7 @@ Para aprovação Meta, grave um vídeo mostrando:
 **Solução:**
 1. Aguarde mais tempo (até 24h)
 2. Verifique se registros DNS estão corretos
-3. Use `dig app.ericlestatistica.com.br` para testar
+3. Use `dig ericlestatistica.com.br` para testar
 
 ### SSL Não Funciona
 **Problema:** Certificado não é gerado
@@ -363,7 +363,7 @@ Para aprovação Meta, grave um vídeo mostrando:
 - [ ] Repositório GitHub criado
 - [ ] Aplicação criada no Coolify
 - [ ] Build configurado corretamente
-- [ ] Domínio `app.ericlestatistica.com.br` configurado
+- [ ] Domínio `ericlestatistica.com.br` configurado
 - [ ] Deploy realizado com sucesso
 - [ ] Aplicação acessível em HTTPS
 - [ ] DNS configurado corretamente
@@ -384,7 +384,7 @@ Para aprovação Meta, grave um vídeo mostrando:
 | Serviço | URL |
 |----------|-----|
 | **Coolify** | https://coolify.ericlestatistica.com.br |
-| **Frontend** | https://app.ericlestatistica.com.br |
+| **Frontend** | https://ericlestatistica.com.br |
 | **n8n** | https://n8n.ericlestatistica.com.br |
 | **GitHub** | https://github.com/ericlesvieira/meta-partner-app |
 | **Meta Console** | https://developers.facebook.com/apps |
