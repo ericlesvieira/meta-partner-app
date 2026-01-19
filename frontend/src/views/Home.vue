@@ -1,163 +1,157 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100">
-    <Navigation />
-    
-    <div class="max-w-4xl mx-auto px-4 py-16">
-      <div class="text-center mb-12">
-        <h1 class="text-5xl font-bold text-gray-900 mb-4">
+  <AppLayout>
+    <div class="max-w-4xl mx-auto animate-fade-in">
+      <!-- Hero Section -->
+      <div class="text-center mb-10">
+        <div class="flex justify-center mb-6">
+          <img src="/logo.png" alt="ericlestatistica" class="h-20 w-20 rounded-full shadow-lg" />
+        </div>
+        <h1 class="text-4xl font-bold text-text-primary mb-3">
           Meta Solution Provider Manager
         </h1>
-        <p class="text-xl text-gray-600">
-          Gerencie sua integração com WhatsApp Business API para Chatwoot
+        <p class="text-lg text-text-secondary">
+          Gerencie sua integracao WhatsApp Business API para Chatwoot
         </p>
       </div>
 
-      <div class="bg-white rounded-2xl shadow-xl p-8 mb-8">
-        <h2 class="text-2xl font-bold text-gray-900 mb-6">Configurar Integração</h2>
-        
-        <form @submit.prevent="handleConnect" class="space-y-6">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              App ID
-            </label>
-            <input
-              v-model="credentials.appId"
-              type="text"
-              required
-              placeholder="ID do seu aplicativo Meta"
-              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-            />
-          </div>
+      <!-- Configuration Card -->
+      <BaseCard variant="elevated" class="mb-8">
+        <template #header>
+          <h2 class="text-xl font-bold text-text-primary">Configurar Integracao</h2>
+        </template>
 
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              App Secret
-            </label>
-            <input
-              v-model="credentials.appSecret"
-              type="password"
-              required
-              placeholder="App Secret do seu aplicativo Meta"
-              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-            />
-          </div>
+        <form @submit.prevent="handleConnect" class="space-y-5">
+          <BaseInput
+            v-model="credentials.appId"
+            label="App ID"
+            placeholder="ID do seu aplicativo Meta"
+            required
+          />
 
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              Access Token
-            </label>
-            <input
-              v-model="credentials.accessToken"
-              type="password"
-              required
-              placeholder="Token de acesso com permissões whatsapp_business_messaging e whatsapp_business_management"
-              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-            />
-          </div>
+          <BaseInput
+            v-model="credentials.appSecret"
+            type="password"
+            label="App Secret"
+            placeholder="App Secret do seu aplicativo Meta"
+            required
+          />
 
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              Webhook URL (n8n)
-            </label>
-            <input
-              v-model="credentials.webhookUrl"
-              type="url"
-              required
-              placeholder="https://your-n8n-instance.com/webhook/whatsapp"
-              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-            />
-          </div>
+          <BaseInput
+            v-model="credentials.accessToken"
+            type="password"
+            label="Access Token"
+            placeholder="Token de acesso com permissoes whatsapp_business_messaging"
+            hint="Certifique-se de que o token tenha as permissoes: whatsapp_business_messaging e whatsapp_business_management"
+            required
+          />
 
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              Webhook Verify Token
-            </label>
-            <input
-              v-model="credentials.webhookVerifyToken"
-              type="text"
-              required
-              placeholder="Token de verificação do webhook"
-              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-            />
-          </div>
+          <BaseInput
+            v-model="credentials.webhookUrl"
+            type="url"
+            label="Webhook URL (n8n)"
+            placeholder="https://your-n8n-instance.com/webhook/whatsapp"
+            required
+          />
 
-          <button
-            type="submit"
-            :disabled="isLoading"
-            class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
-          >
-            <span v-if="isLoading">Conectando...</span>
-            <span v-else>Conectar com Meta</span>
-          </button>
+          <BaseInput
+            v-model="credentials.webhookVerifyToken"
+            label="Webhook Verify Token"
+            placeholder="Token de verificacao do webhook"
+            required
+          />
+
+          <BaseButton type="submit" :loading="isLoading" full-width size="lg">
+            {{ isLoading ? 'Conectando...' : 'Conectar com Meta' }}
+          </BaseButton>
         </form>
 
-        <div v-if="error" class="mt-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-r">
-          <p class="text-red-700 font-medium">{{ error }}</p>
+        <!-- Messages -->
+        <div v-if="error" class="mt-6 p-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+          <div class="flex items-center gap-2 text-red-700 dark:text-red-400">
+            <svg class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+            </svg>
+            <span class="font-medium">{{ error }}</span>
+          </div>
         </div>
 
-        <div v-if="success" class="mt-6 bg-green-50 border-l-4 border-green-500 p-4 rounded-r">
-          <p class="text-green-700 font-medium">{{ success }}</p>
+        <div v-if="success" class="mt-6 p-4 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
+          <div class="flex items-center gap-2 text-green-700 dark:text-green-400">
+            <svg class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+            </svg>
+            <span class="font-medium">{{ success }}</span>
+          </div>
           <router-link
             to="/dashboard"
-            class="mt-2 inline-block text-indigo-600 hover:text-indigo-800 font-medium"
+            class="mt-3 inline-flex items-center gap-1 text-primary-600 dark:text-primary-400 hover:underline font-medium"
           >
-            Ir para o Dashboard →
+            Ir para o Dashboard
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
           </router-link>
         </div>
+      </BaseCard>
+
+      <!-- Feature Cards -->
+      <div class="grid md:grid-cols-3 gap-6 mb-8">
+        <BaseCard hoverable class="text-center">
+          <div class="w-12 h-12 mx-auto mb-4 rounded-xl bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
+            <svg class="w-6 h-6 text-primary-600 dark:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <h3 class="text-lg font-semibold text-text-primary mb-2">WhatsApp Management</h3>
+          <p class="text-text-secondary text-sm">Gerencie contas WhatsApp, numeros e configuracoes</p>
+        </BaseCard>
+
+        <BaseCard hoverable class="text-center">
+          <div class="w-12 h-12 mx-auto mb-4 rounded-xl bg-accent-400/20 flex items-center justify-center">
+            <svg class="w-6 h-6 text-accent-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          </div>
+          <h3 class="text-lg font-semibold text-text-primary mb-2">Templates</h3>
+          <p class="text-text-secondary text-sm">Crie e gerencie templates de mensagens aprovados</p>
+        </BaseCard>
+
+        <BaseCard hoverable class="text-center">
+          <div class="w-12 h-12 mx-auto mb-4 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+            <svg class="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+          </div>
+          <h3 class="text-lg font-semibold text-text-primary mb-2">Analytics</h3>
+          <p class="text-text-secondary text-sm">Acompanhe metricas e estatisticas de uso</p>
+        </BaseCard>
       </div>
 
-      <div class="grid md:grid-cols-3 gap-6">
-        <div class="bg-white rounded-xl shadow-lg p-6 text-center">
-          <div class="text-4xl mb-4">📱</div>
-          <h3 class="text-lg font-bold text-gray-900 mb-2">WhatsApp Management</h3>
-          <p class="text-gray-600 text-sm">Gerencie contas WhatsApp, números e configurações</p>
-        </div>
-
-        <div class="bg-white rounded-xl shadow-lg p-6 text-center">
-          <div class="text-4xl mb-4">📝</div>
-          <h3 class="text-lg font-bold text-gray-900 mb-2">Templates</h3>
-          <p class="text-gray-600 text-sm">Crie e gerencie templates de mensagens aprovados</p>
-        </div>
-
-        <div class="bg-white rounded-xl shadow-lg p-6 text-center">
-          <div class="text-4xl mb-4">📊</div>
-          <h3 class="text-lg font-bold text-gray-900 mb-2">Analytics</h3>
-          <p class="text-gray-600 text-sm">Acompanhe métricas e estatísticas de uso</p>
-        </div>
-      </div>
-
-      <div class="mt-12 bg-white rounded-2xl shadow-lg p-6 border border-slate-100">
-        <h3 class="text-lg font-bold text-slate-900 mb-3">Legal</h3>
-        <p class="text-slate-600 mb-4">Acesse as políticas e termos oficiais do serviço.</p>
-        <div class="flex flex-col sm:flex-row sm:flex-wrap gap-3">
-          <router-link
-            to="/privacy-policy"
-            class="inline-flex items-center justify-center rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-slate-300 hover:text-slate-900 transition"
-          >
-            Privacy Policy
+      <!-- Legal Links -->
+      <BaseCard>
+        <h3 class="text-lg font-semibold text-text-primary mb-3">Legal</h3>
+        <p class="text-text-secondary mb-4">Acesse as politicas e termos oficiais do servico.</p>
+        <div class="flex flex-wrap gap-3">
+          <router-link to="/privacy-policy">
+            <BaseButton variant="secondary" size="sm">Privacy Policy</BaseButton>
           </router-link>
-          <router-link
-            to="/terms-of-service"
-            class="inline-flex items-center justify-center rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-slate-300 hover:text-slate-900 transition"
-          >
-            Terms of Service
+          <router-link to="/terms-of-service">
+            <BaseButton variant="secondary" size="sm">Terms of Service</BaseButton>
           </router-link>
-          <router-link
-            to="/data-deletion"
-            class="inline-flex items-center justify-center rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-slate-300 hover:text-slate-900 transition"
-          >
-            Data Deletion Request
+          <router-link to="/data-deletion">
+            <BaseButton variant="secondary" size="sm">Data Deletion</BaseButton>
           </router-link>
         </div>
-      </div>
+      </BaseCard>
     </div>
-  </div>
+  </AppLayout>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useMetaStore } from '../stores/meta'
-import Navigation from '../components/Navigation.vue'
+import { AppLayout } from '../components/layout'
+import { BaseCard, BaseInput, BaseButton } from '../components/ui'
 import type { MetaCredentials } from '../types'
 
 const metaStore = useMetaStore()
@@ -182,7 +176,7 @@ async function handleConnect() {
   try {
     metaStore.setCredentials(credentials.value)
     await metaStore.fetchWabaAccounts()
-    success.value = 'Conexão estabelecida com sucesso!'
+    success.value = 'Conexao estabelecida com sucesso!'
   } catch (e: any) {
     error.value = e.message || 'Erro ao conectar com Meta. Verifique suas credenciais.'
   } finally {

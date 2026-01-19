@@ -1,277 +1,249 @@
 <template>
-  <div class="min-h-screen bg-gray-100">
-    <Navigation />
-    
-    <div class="max-w-7xl mx-auto px-4 py-8">
-      <div class="flex items-center justify-between mb-8">
+  <AppLayout>
+    <div class="animate-fade-in space-y-6">
+      <!-- Page Header -->
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 class="text-3xl font-bold text-gray-900">Templates de Mensagem</h1>
-          <p class="text-gray-600 mt-2">Crie e gerencie templates aprovados pelo WhatsApp</p>
+          <h1 class="text-2xl lg:text-3xl font-bold text-text-primary">Templates de Mensagem</h1>
+          <p class="text-text-secondary mt-1">Crie e gerencie templates aprovados pelo WhatsApp</p>
         </div>
-        <button
-          @click="showCreateModal = true"
-          class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg transition-all flex items-center"
-        >
-          <span class="mr-2">➕</span>
+        <BaseButton @click="showCreateModal = true">
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
           Criar Template
-        </button>
+        </BaseButton>
       </div>
 
+      <!-- Loading State -->
       <div v-if="isLoading" class="flex justify-center items-center py-20">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+        <div class="animate-spin rounded-full h-12 w-12 border-4 border-primary-200 border-t-primary-600"></div>
       </div>
 
-      <div v-else-if="templates.length === 0" class="bg-white rounded-xl shadow-lg p-12 text-center">
-        <div class="text-6xl mb-4">📝</div>
-        <h2 class="text-2xl font-bold text-gray-900 mb-2">Nenhum template criado</h2>
-        <p class="text-gray-600 mb-6">
+      <!-- Empty State -->
+      <BaseCard v-else-if="templates.length === 0" variant="elevated" class="text-center py-12">
+        <div class="mb-4">
+          <svg class="w-16 h-16 mx-auto text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+        </div>
+        <h2 class="text-xl font-bold text-text-primary mb-2">Nenhum template criado</h2>
+        <p class="text-text-secondary mb-6 max-w-md mx-auto">
           Crie seu primeiro template de mensagem para enviar mensagens no WhatsApp
         </p>
-        <button
-          @click="showCreateModal = true"
-          class="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg transition-all"
-        >
-          Criar Template →
-        </button>
-      </div>
+        <BaseButton @click="showCreateModal = true">
+          Criar Template
+          <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+          </svg>
+        </BaseButton>
+      </BaseCard>
 
+      <!-- Templates Grid -->
       <div v-else class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div
+        <BaseCard
           v-for="template in templates"
           :key="template.id"
-          class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow"
+          variant="elevated"
+          hoverable
+          class="flex flex-col"
         >
-          <div class="p-6">
-            <div class="flex items-start justify-between mb-4">
-              <div>
-                <h3 class="text-lg font-bold text-gray-900">{{ template.name }}</h3>
-                <p class="text-sm text-gray-500 mt-1">ID: {{ template.id }}</p>
-              </div>
-              <span
-                class="px-3 py-1 rounded-full text-xs font-medium"
-                :class="{
-                  'bg-green-100 text-green-800': template.status === 'APPROVED',
-                  'bg-yellow-100 text-yellow-800': template.status === 'PENDING',
-                  'bg-red-100 text-red-800': template.status === 'REJECTED',
-                  'bg-gray-100 text-gray-800': !template.status
-                }"
+          <div class="flex items-start justify-between mb-4">
+            <div class="flex-1 min-w-0">
+              <h3 class="text-lg font-bold text-text-primary truncate">{{ template.name }}</h3>
+              <p class="text-sm text-text-muted mt-1 font-mono">ID: {{ template.id }}</p>
+            </div>
+            <BaseBadge :variant="getStatusVariant(template.status)" size="sm" class="ml-3 flex-shrink-0">
+              {{ template.status || 'Unknown' }}
+            </BaseBadge>
+          </div>
+
+          <div class="space-y-2 mb-4">
+            <div class="flex justify-between text-sm">
+              <span class="text-text-secondary">Categoria:</span>
+              <span class="font-medium text-text-primary">{{ template.category }}</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-text-secondary">Idioma:</span>
+              <span class="font-medium text-text-primary">{{ template.language }}</span>
+            </div>
+          </div>
+
+          <!-- Template Components Preview -->
+          <div v-if="template.components && template.components.length > 0" class="border-t border-border pt-4 mt-auto">
+            <h4 class="text-sm font-semibold text-text-primary mb-2">Componentes:</h4>
+            <div class="space-y-2 max-h-48 overflow-y-auto">
+              <div
+                v-for="(component, index) in template.components"
+                :key="index"
+                class="p-3 bg-surface-elevated rounded-lg text-sm"
               >
-                {{ template.status || 'Unknown' }}
-              </span>
-            </div>
-
-            <div class="space-y-2 mb-4">
-              <div class="flex justify-between text-sm">
-                <span class="text-gray-600">Categoria:</span>
-                <span class="font-medium text-gray-900">{{ template.category }}</span>
-              </div>
-              <div class="flex justify-between text-sm">
-                <span class="text-gray-600">Idioma:</span>
-                <span class="font-medium text-gray-900">{{ template.language }}</span>
-              </div>
-            </div>
-
-            <div v-if="template.components && template.components.length > 0" class="border-t border-gray-200 pt-4">
-              <h4 class="text-sm font-semibold text-gray-900 mb-2">Componentes:</h4>
-              <div class="space-y-2">
-                <div
-                  v-for="(component, index) in template.components"
-                  :key="index"
-                  class="p-3 bg-gray-50 rounded-lg text-sm"
-                >
-                  <div class="flex items-center justify-between mb-2">
-                    <span class="font-medium text-gray-900">{{ component.type }}</span>
-                    <span v-if="component.format" class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                      {{ component.format }}
-                    </span>
-                  </div>
-                  <p v-if="component.text" class="text-gray-600 text-xs mt-1 line-clamp-3">
-                    {{ component.text }}
-                  </p>
-                  <div v-if="component.buttons && component.buttons.length > 0" class="mt-2 space-y-1">
-                    <div
-                      v-for="(button, btnIndex) in component.buttons"
-                      :key="btnIndex"
-                      class="text-xs bg-white p-2 rounded border border-gray-200"
-                    >
-                      <span class="font-medium">{{ button.type }}:</span>
-                      <span class="ml-1">{{ button.text }}</span>
-                    </div>
+                <div class="flex items-center justify-between mb-2">
+                  <span class="font-medium text-text-primary">{{ component.type }}</span>
+                  <BaseBadge v-if="component.format" variant="info" size="sm">
+                    {{ component.format }}
+                  </BaseBadge>
+                </div>
+                <p v-if="component.text" class="text-text-secondary text-xs mt-1 line-clamp-3">
+                  {{ component.text }}
+                </p>
+                <div v-if="component.buttons && component.buttons.length > 0" class="mt-2 space-y-1">
+                  <div
+                    v-for="(button, btnIndex) in component.buttons"
+                    :key="btnIndex"
+                    class="text-xs bg-surface p-2 rounded border border-border"
+                  >
+                    <span class="font-medium text-text-primary">{{ button.type }}:</span>
+                    <span class="ml-1 text-text-secondary">{{ button.text }}</span>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        </BaseCard>
       </div>
-    </div>
 
-    <div
-      v-if="showCreateModal"
-      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto py-8"
-      @click.self="showCreateModal = false"
-    >
-      <div class="bg-white rounded-xl shadow-2xl p-6 max-w-2xl w-full mx-4 my-auto">
-        <div class="flex items-center justify-between mb-6">
-          <h3 class="text-xl font-bold text-gray-900">Criar Template</h3>
-          <button
-            @click="showCreateModal = false"
-            class="text-gray-400 hover:text-gray-600"
-          >
-            ✕
-          </button>
-        </div>
-
+      <!-- Create Template Modal -->
+      <BaseModal v-model="showCreateModal" title="Criar Template" size="xl">
         <form @submit.prevent="createTemplate" class="space-y-6">
           <div class="grid md:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Nome do Template</label>
-              <input
-                v-model="newTemplate.name"
-                type="text"
-                required
-                placeholder="ex: boas_vindas_cliente"
-                pattern="[a-z_0-9]+"
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              />
-              <p class="text-xs text-gray-500 mt-1">Apenas letras minúsculas, números e underscore</p>
-            </div>
+            <BaseInput
+              v-model="newTemplate.name"
+              label="Nome do Template"
+              placeholder="ex: boas_vindas_cliente"
+              pattern="[a-z_0-9]+"
+              hint="Apenas letras minusculas, numeros e underscore"
+              required
+            />
 
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Categoria</label>
+              <label class="block text-sm font-medium text-text-primary mb-2">Categoria</label>
               <select
                 v-model="newTemplate.category"
                 required
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                class="w-full px-4 py-2.5 bg-surface border border-border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-text-primary transition-colors"
               >
                 <option value="">Selecione...</option>
                 <option value="MARKETING">Marketing</option>
                 <option value="UTILITY">Utilidade</option>
-                <option value="AUTHENTICATION">Autenticação</option>
+                <option value="AUTHENTICATION">Autenticacao</option>
               </select>
             </div>
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Idioma</label>
+            <label class="block text-sm font-medium text-text-primary mb-2">Idioma</label>
             <select
               v-model="newTemplate.language"
               required
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              class="w-full px-4 py-2.5 bg-surface border border-border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-text-primary transition-colors"
             >
-              <option value="pt_BR">Português (Brasil)</option>
-              <option value="en_US">Inglês (EUA)</option>
+              <option value="pt_BR">Portugues (Brasil)</option>
+              <option value="en_US">Ingles (EUA)</option>
               <option value="es">Espanhol</option>
-              <option value="fr">Francês</option>
-              <option value="de">Alemão</option>
+              <option value="fr">Frances</option>
+              <option value="de">Alemao</option>
             </select>
           </div>
 
-          <div class="border-t border-gray-200 pt-4">
-            <h4 class="text-sm font-semibold text-gray-900 mb-3">Corpo da Mensagem</h4>
+          <div class="border-t border-border pt-6">
+            <h4 class="text-sm font-semibold text-text-primary mb-3">Corpo da Mensagem</h4>
             <textarea
               v-model="newTemplate.bodyText"
               required
               rows="4"
-              placeholder="Digite a mensagem do template. Use {{1}}, {{2}}, etc. para parâmetros dinâmicos."
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              placeholder="Digite a mensagem do template. Use {{1}}, {{2}}, etc. para parametros dinamicos."
+              class="w-full px-4 py-2.5 bg-surface border border-border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-text-primary transition-colors resize-none"
             ></textarea>
-            <p class="text-xs text-gray-500 mt-1">
-              Use {{1}}, {{2}}, etc. para inserir variáveis dinâmicas
+            <p class="text-xs text-text-muted mt-2">
+              Use &#123;&#123;1&#125;&#125;, &#123;&#123;2&#125;&#125;, etc. para inserir variaveis dinamicas
             </p>
           </div>
 
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
+          <div class="border-t border-border pt-6">
+            <label class="flex items-center cursor-pointer">
               <input
                 v-model="newTemplate.addButton"
                 type="checkbox"
-                class="mr-2"
+                class="w-4 h-4 rounded border-border text-primary-600 focus:ring-primary-500"
               />
-              Adicionar Botões
+              <span class="ml-3 text-sm font-medium text-text-primary">Adicionar Botoes</span>
             </label>
-            <div v-if="newTemplate.addButton" class="mt-3 space-y-3">
+
+            <div v-if="newTemplate.addButton" class="mt-4 space-y-3">
               <div
                 v-for="(button, index) in newTemplate.buttons"
                 :key="index"
-                class="p-3 bg-gray-50 rounded-lg"
+                class="p-4 bg-surface-elevated rounded-lg border border-border"
               >
-                <div class="grid grid-cols-2 gap-2">
+                <div class="grid grid-cols-2 gap-3">
                   <select
                     v-model="button.type"
-                    class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
+                    class="px-3 py-2 bg-surface border border-border rounded-lg text-sm focus:ring-2 focus:ring-primary-500 text-text-primary"
                   >
-                    <option value="QUICK_REPLY">Resposta Rápida</option>
+                    <option value="QUICK_REPLY">Resposta Rapida</option>
                     <option value="URL">URL</option>
-                    <option value="PHONE_NUMBER">Número de Telefone</option>
+                    <option value="PHONE_NUMBER">Numero de Telefone</option>
                   </select>
                   <input
                     v-model="button.text"
                     type="text"
-                    placeholder="Texto do botão"
-                    class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
+                    placeholder="Texto do botao"
+                    class="px-3 py-2 bg-surface border border-border rounded-lg text-sm focus:ring-2 focus:ring-primary-500 text-text-primary"
                   />
                 </div>
-                <div v-if="button.type === 'URL'" class="mt-2">
+                <div v-if="button.type === 'URL'" class="mt-3">
                   <input
                     v-model="button.url"
                     type="url"
                     placeholder="https://exemplo.com/{{1}}"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
+                    class="w-full px-3 py-2 bg-surface border border-border rounded-lg text-sm focus:ring-2 focus:ring-primary-500 text-text-primary"
                   />
                 </div>
-                <div v-if="button.type === 'PHONE_NUMBER'" class="mt-2">
+                <div v-if="button.type === 'PHONE_NUMBER'" class="mt-3">
                   <input
                     v-model="button.phone_number"
                     type="tel"
                     placeholder="+5511999999999"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
+                    class="w-full px-3 py-2 bg-surface border border-border rounded-lg text-sm focus:ring-2 focus:ring-primary-500 text-text-primary"
                   />
                 </div>
                 <button
                   type="button"
                   @click="newTemplate.buttons.splice(index, 1)"
-                  class="mt-2 text-red-600 hover:text-red-800 text-sm"
+                  class="mt-3 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-sm font-medium"
                 >
-                  Remover Botão
+                  Remover Botao
                 </button>
               </div>
-              <button
-                type="button"
-                @click="addButton"
-                class="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
-              >
-                + Adicionar Outro Botão
-              </button>
+              <BaseButton type="button" variant="ghost" size="sm" @click="addButton">
+                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                Adicionar Outro Botao
+              </BaseButton>
             </div>
           </div>
-
-          <div class="flex space-x-3">
-            <button
-              type="button"
-              @click="showCreateModal = false"
-              class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 px-4 rounded-lg transition-all"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              :disabled="isCreating"
-              class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg transition-all disabled:opacity-50"
-            >
-              {{ isCreating ? 'Enviando...' : 'Enviar para Aprovação' }}
-            </button>
-          </div>
         </form>
-      </div>
+
+        <template #footer>
+          <BaseButton variant="secondary" @click="showCreateModal = false">
+            Cancelar
+          </BaseButton>
+          <BaseButton @click="createTemplate" :loading="isCreating">
+            Enviar para Aprovacao
+          </BaseButton>
+        </template>
+      </BaseModal>
     </div>
-  </div>
+  </AppLayout>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useMetaStore } from '../stores/meta'
-import Navigation from '../components/Navigation.vue'
+import AppLayout from '../components/layout/AppLayout.vue'
+import { BaseButton, BaseCard, BaseInput, BaseBadge, BaseModal } from '../components/ui'
 import type { TemplateButton } from '../types'
 
 const metaStore = useMetaStore()
@@ -290,6 +262,15 @@ const newTemplate = ref({
   addButton: false,
   buttons: [] as TemplateButton[]
 })
+
+function getStatusVariant(status: string | undefined): 'success' | 'warning' | 'danger' | 'default' {
+  switch (status) {
+    case 'APPROVED': return 'success'
+    case 'PENDING': return 'warning'
+    case 'REJECTED': return 'danger'
+    default: return 'default'
+  }
+}
 
 function addButton() {
   newTemplate.value.buttons.push({
@@ -328,7 +309,7 @@ async function createTemplate() {
   isCreating.value = true
   try {
     await metaStore.createTemplate(metaStore.selectedWabaId, templateData)
-    alert('Template enviado para aprovação!')
+    alert('Template enviado para aprovacao!')
     showCreateModal.value = false
     newTemplate.value = {
       name: '',
